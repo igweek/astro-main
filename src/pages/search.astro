@@ -1,1 +1,162 @@
+---
+// 导入你的主布局（根据项目实际布局文件名修改）
+import MainLayout from '../layouts/MainLayout.astro';
+// 导入 Astro 内容集合工具
+import { getCollection } from 'astro:content';
 
+// 1. 获取所有文章数据（假设你的文章集合名为 'posts'）
+const posts = await getCollection('posts');
+
+// 2. 处理文章数据，提取搜索需要的字段（标题、摘要、标签等）
+const searchablePosts = posts.map(post => ({
+  slug: post.slug, // 用于生成文章链接
+  title: post.data.title, // 文章标题
+  excerpt: post.data.excerpt || '', // 摘要（可选）
+  tags: post.data.tags || [], // 标签（可选）
+  publishDate: post.data.publishDate, // 发布日期
+  content: post.body.substring(0, 300) // 截取部分内容用于搜索
+}));
+---
+
+<!-- 3. 使用主布局包裹页面内容，保持样式一致 -->
+<MainLayout title="搜索文章 | 我的博客">
+  <div class="max-w-3xl mx-auto px-4 py-8">
+    <!-- 页面标题 -->
+    <h1 class="text-2xl md:text-3xl font-bold mb-6 text-gray-900 dark:text-white">搜索文章</h1>
+
+    <!-- 4. 搜索框 -->
+    <div class="mb-8">
+      <input 
+        type="text" 
+        id="search-input"
+        placeholder="输入关键词搜索..." 
+        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+      >
+    </div>
+
+    <!-- 5. 搜索结果区域 -->
+    <div id="results">
+      <!-- 初始提示 -->
+      <div id="initial-message" class="text-center py-10 text-gray-500 dark:text-gray-400">
+        请输入关键词搜索文章（支持标题、标签、内容）
+      </div>
+
+      <!-- 结果列表（默认隐藏） -->
+      <div id="results-list" class="hidden space-y-6">
+        <p id="results-count" class="text-sm text-gray-500 dark:text-gray-400"></p>
+        <div id="posts-container" class="space-y-4"></div>
+      </div>
+
+      <!-- 无结果提示（默认隐藏） -->
+      <div id="no-results" class="hidden text-center py-10 text-gray-500 dark:text-gray-400">
+        没有找到匹配的文章，请尝试其他关键词
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. 搜索逻辑脚本 -->
+  <script is:inline>
+    // 接收 Astro 传递的文章数据
+    const allPosts = JSON.parse('<%= JSON.stringify(searchablePosts) %>');
+    
+    // 获取页面元素
+    const searchInput = document.getElementById('search-input');
+    const initialMessage = document.getElementById('initial-message');
+    const resultsList = document.getElementById('results-list');
+    const resultsCount = document.getElementById('results-count');
+    const postsContainer = document.getElementById('posts-container');
+    const noResults = document.getElementById('no-results');
+
+    // 监听搜索输入
+    searchInput.addEventListener('input', (e) => {
+      const keyword = e.target.value.trim().toLowerCase();
+      handleSearch(keyword);
+    });
+
+    // 处理搜索逻辑
+    function handleSearch(keyword) {
+      // 清空搜索时显示初始状态
+      if (!keyword) {
+        initialMessage.classList.remove('hidden');
+        resultsList.classList.add('hidden');
+        noResults.classList.add('hidden');
+        return;
+      }
+
+      // 过滤匹配的文章
+      const matchedPosts = allPosts.filter(post => {
+        // 检查标题是否匹配
+        const titleMatch = post.title.toLowerCase().includes(keyword);
+        // 检查标签是否匹配
+        const tagMatch = post.tags.some(tag => tag.toLowerCase().includes(keyword));
+        // 检查摘要是否匹配
+        const excerptMatch = post.excerpt.toLowerCase().includes(keyword);
+        // 检查内容是否匹配
+        const contentMatch = post.content.toLowerCase().includes(keyword);
+        
+        return titleMatch || tagMatch || excerptMatch || contentMatch;
+      });
+
+      // 显示搜索结果
+      if (matchedPosts.length > 0) {
+        showResults(matchedPosts, keyword);
+      } else {
+        // 无结果时显示提示
+        initialMessage.classList.add('hidden');
+        resultsList.classList.add('hidden');
+        noResults.classList.remove('hidden');
+      }
+    }
+
+    // 显示搜索结果
+    function showResults(posts, keyword) {
+      // 更新结果计数
+      resultsCount.textContent = `找到 ${posts.length} 篇匹配的文章`;
+      
+      // 清空并填充结果列表
+      postsContainer.innerHTML = '';
+      posts.forEach(post => {
+        // 格式化日期
+        const date = new Date(post.publishDate);
+        const formattedDate = date.toLocaleDateString('zh-CN', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+
+        // 创建文章卡片
+        const postCard = document.createElement('article');
+        postCard.className = 'p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow';
+        postCard.innerHTML = `
+          <h3 class="text-lg font-semibold mb-1">
+            <a href="/posts/${post.slug}" class="text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400">
+              ${highlightKeyword(post.title, keyword)}
+            </a>
+          </h3>
+          <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+            ${formattedDate}
+            ${post.tags.length > 0 ? ` • ${post.tags.map(tag => 
+              `<span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">${tag}</span>`
+            ).join(' ')}` : ''}
+          </div>
+          <p class="text-gray-600 dark:text-gray-300 text-sm line-clamp-2">
+            ${post.excerpt ? highlightKeyword(post.excerpt, keyword) : '无摘要'}
+          </p>
+        `;
+        postsContainer.appendChild(postCard);
+      });
+
+      // 显示结果列表，隐藏其他状态
+      initialMessage.classList.add('hidden');
+      resultsList.classList.remove('hidden');
+      noResults.classList.add('hidden');
+    }
+
+    // 高亮匹配的关键词
+    function highlightKeyword(text, keyword) {
+      if (!keyword) return text;
+      const regex = new RegExp(`(${keyword})`, 'gi');
+      return text.replace(regex, '<span class="bg-yellow-200 dark:bg-yellow-900/30">$1</span>');
+    }
+  </script>
+</MainLayout>
