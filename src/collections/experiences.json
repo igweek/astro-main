@@ -1,0 +1,30 @@
+[
+  {
+    "dates": "2006 - 至今",
+    "role": "教师",
+    "company": "江苏联合职业技术学院",
+    "description": "从事职业教育工作，负责计算机相关专业课程教学，包括软件技术、程序设计等核心课程，培养学生实践能力与职业素养。",
+    "logo": "/assets/images/experiences/4.ico"
+  },
+  {
+    "dates": "2015",
+    "role": "硕士毕业",
+    "company": "东南大学 软件学院",
+    "description": "攻读软件工程专业硕士学位，系统学习软件架构、软件开发方法及项目管理等专业知识，提升技术研发与创新能力。",
+    "logo": "/assets/images/experiences/3.ico"
+  },
+  {
+    "dates": "2005",
+    "role": "职员",
+    "company": "Wistron（纬创）",
+    "description": "参与电子信息产品相关工作，积累了制造业信息化与技术支持经验，为后续职业发展奠定实践基础。",
+    "logo": "/assets/images/experiences/2.ico"
+  },
+  {
+    "dates": "2005",
+    "role": "本科毕业",
+    "company": "南京信息工程大学",
+    "description": "完成本科学业，掌握计算机科学与技术领域基础知识，为职业发展和后续深造奠定理论基础。",
+    "logo": "/assets/images/experiences/1.ico"
+  }
+]
