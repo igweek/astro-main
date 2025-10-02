@@ -1,152 +1,33 @@
 ---
-// 导入主布局（你的布局文件是 src/layouts/main.astro）
-import MainLayout from '../layouts/main.astro';
-// 导入内容集合工具
-import { getCollection } from 'astro:content';
+import { useState } from 'preact/hooks';
+import Layout from "../layouts/main.astro";
+import PageHeading from "../components/page-heading.astro";
+import PostsLoop from "../components/posts-loop.astro";
 
-// 获取所有文章（集合名为 'post'，与你的定义一致）
-const posts = await getCollection('post');
-
-// 处理文章数据：严格使用你定义的3个字段 + 正文内容
-const searchablePosts = posts.map(post => ({
-  slug: post.slug, // 用于生成文章链接
-  title: post.data.title, // 标题（必选字段，schema已定义）
-  description: post.data.description, // 描述（必选字段，schema已定义）
-  dateFormatted: post.data.dateFormatted, // 日期（必选字段，schema已定义）
-  contentPreview: post.body.substring(0, 500) // 截取正文前500字符用于搜索
-}));
+const [query, setQuery] = useState('');
 ---
 
-<MainLayout title="Search | 博客名称">
-  <div class="max-w-5xl mx-auto px-6 py-8">
-    <h1 class="text-3xl font-bold mb-8 text-gray-900 dark:text-white">Search Posts</h1>
+<Layout title="Search Posts">
+  <section class="relative z-20 max-w-2xl mx-auto my-12 px-7 lg:px-0">
+    <PageHeading
+      title="Search Posts"
+      description="Search through my posts by keyword in the title or description."
+    />
 
-    <!-- 搜索框 -->
-    <div class="mb-8">
-      <input 
-        type="text" 
-        id="search-input"
-        placeholder="Search by title, description or content..." 
-        class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all dark:text-white"
-        autocomplete="off"
-      >
+    <!-- 搜索输入框 -->
+    <div class="my-6">
+      <input
+        type="text"
+        placeholder="Type a keyword to search..."
+        class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
+        value={query}
+        onInput={(e) => setQuery(e.target.value)}
+      />
     </div>
 
-    <!-- 搜索结果区域 -->
-    <div id="search-results" class="space-y-6">
-      <!-- 初始状态 -->
-      <div id="initial-state" class="py-12 text-center text-gray-500 dark:text-neutral-400">
-        Enter keywords to search across all posts
-      </div>
-
-      <!-- 无结果状态 -->
-      <div id="no-results" class="py-12 text-center text-gray-500 dark:text-neutral-400 hidden">
-        No posts found matching your search
-      </div>
-
-      <!-- 结果列表 -->
-      <div id="results-list" class="space-y-6 hidden">
-        <p id="results-count" class="text-sm text-gray-500 dark:text-neutral-400"></p>
-        <div id="posts-container" class="space-y-6"></div>
-      </div>
+    <!-- 搜索结果 -->
+    <div class="z-50 flex flex-col items-stretch w-full gap-5 my-8">
+      <PostsLoop count="999999" query={query} />
     </div>
-  </div>
-
-  <!-- 搜索逻辑：严格基于你的3个字段设计 -->
-  <script is:inline>
-    // 接收处理后的文章数据
-    const allPosts = JSON.parse('<%= JSON.stringify(searchablePosts) %>');
-    
-    // 获取DOM元素
-    const searchInput = document.getElementById('search-input');
-    const initialState = document.getElementById('initial-state');
-    const noResults = document.getElementById('no-results');
-    const resultsList = document.getElementById('results-list');
-    const resultsCount = document.getElementById('results-count');
-    const postsContainer = document.getElementById('posts-container');
-
-    // 监听搜索输入
-    searchInput.addEventListener('input', (e) => {
-      const keyword = e.target.value.trim().toLowerCase();
-      handleSearch(keyword);
-    });
-
-    // 搜索处理函数
-    function handleSearch(keyword) {
-      // 空搜索时显示初始状态
-      if (!keyword) {
-        initialState.classList.remove('hidden');
-        noResults.classList.add('hidden');
-        resultsList.classList.add('hidden');
-        return;
-      }
-
-      // 过滤匹配的文章：仅搜索你定义的字段
-      const matchedPosts = allPosts.filter(post => {
-        // 标题匹配（权重最高）
-        const titleMatch = post.title.toLowerCase().includes(keyword);
-        // 描述匹配
-        const descMatch = post.description.toLowerCase().includes(keyword);
-        // 正文内容匹配
-        const contentMatch = post.contentPreview.toLowerCase().includes(keyword);
-        
-        return titleMatch || descMatch || contentMatch;
-      });
-
-      // 显示对应结果状态
-      if (matchedPosts.length > 0) {
-        showResults(matchedPosts, keyword);
-      } else {
-        initialState.classList.add('hidden');
-        resultsList.classList.add('hidden');
-        noResults.classList.remove('hidden');
-      }
-    }
-
-    // 显示搜索结果
-    function showResults(posts, keyword) {
-      // 更新结果计数
-      resultsCount.textContent = `Found ${posts.length} matching post(s)`;
-      
-      // 清空并填充结果容器
-      postsContainer.innerHTML = '';
-      posts.forEach(post => {
-        const postCard = document.createElement('article');
-        postCard.className = 'p-6 bg-white dark:bg-neutral-950 rounded-lg shadow-sm border border-gray-200 dark:border-neutral-800 hover:shadow-md transition-shadow';
-        
-        postCard.innerHTML = `
-          <h2 class="text-xl font-semibold mb-2">
-            <a href="/posts/${post.slug}" class="text-gray-900 dark:text-neutral-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              ${highlightKeyword(post.title, keyword)}
-            </a>
-          </h2>
-          <div class="text-sm text-gray-500 dark:text-neutral-400 mb-3">
-            ${post.dateFormatted}
-          </div>
-          <p class="text-gray-600 dark:text-neutral-300 line-clamp-2">
-            ${highlightKeyword(post.description, keyword)}
-          </p>
-        `;
-        
-        postsContainer.appendChild(postCard);
-      });
-
-      // 切换显示状态
-      initialState.classList.add('hidden');
-      resultsList.classList.remove('hidden');
-      noResults.classList.add('hidden');
-    }
-
-    // 关键词高亮函数
-    function highlightKeyword(text, keyword) {
-      if (!keyword) return text;
-      const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
-      return text.replace(regex, '<span class="bg-yellow-200 dark:bg-yellow-900/30">$1</span>');
-    }
-
-    // 正则特殊字符转义
-    function escapeRegExp(str) {
-      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
-  </script>
-</MainLayout>
+  </section>
+</Layout>
