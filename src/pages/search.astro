@@ -1,45 +1,57 @@
 ---
 import Layout from "../layouts/main.astro";
 import PageHeading from "../components/page-heading.astro";
-import PostsLoop from "../components/posts-loop.astro";
+import { getCollection } from "astro:content";
 
-// 初始 query
-let query = '';
+const allPosts = await getCollection("post");
+
+// 获取查询参数
+const url = new URL(Astro.request.url);
+const query = url.searchParams.get('q')?.toLowerCase() ?? '';
+
+// 过滤文章
+const filteredPosts = allPosts.filter(post =>
+  post.data.title.toLowerCase().includes(query) ||
+  post.data.description.toLowerCase().includes(query)
+);
 ---
 
 <Layout title="Search Posts">
-  <section class="relative z-20 max-w-2xl mx-auto my-12 px-7 lg:px-0">
-    <PageHeading
-      title="Search Posts"
-      description="Search through my posts by keyword in the title or description."
-    />
-
-    <!-- 搜索输入框 -->
-    <div class="my-6">
-      <input
-        type="text"
-        placeholder="Type a keyword to search..."
-        class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
-        id="search-input"
+  <main class="flex flex-col min-h-screen">
+    <section class="relative z-20 max-w-2xl mx-auto my-12 px-7 lg:px-0 flex-grow">
+      <PageHeading
+        title="Search Posts"
+        description="Search through my posts by keyword."
       />
-    </div>
 
-    <!-- 搜索结果 -->
-    <div class="z-50 flex flex-col items-stretch w-full gap-5 my-8" id="search-results">
-      <PostsLoop count="999999" query={query} />
-    </div>
-  </section>
+      <form method="get" class="my-6">
+        <input
+          type="text"
+          name="q"
+          value={query}
+          placeholder="Type a keyword..."
+          class="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
+        />
+      </form>
 
-  <script type="module">
-    const input = document.getElementById('search-input');
-    input.addEventListener('input', (e) => {
-      const value = e.target.value.toLowerCase();
-      const url = new URL(window.location.href);
-      url.searchParams.set('q', value);
-      window.history.replaceState({}, '', url);
-      // 更新 query 重新渲染 PostsLoop
-      const event = new CustomEvent('search:update', { detail: value });
-      document.getElementById('search-results').dispatchEvent(event);
-    });
-  </script>
+      <div class="flex flex-col gap-5 my-8">
+        {filteredPosts.length > 0 ? (
+          filteredPosts.map(post => (
+            <div
+              class="relative border border-transparent border-dashed cursor-pointer p-7 group rounded-2xl"
+              onclick={`location.href='/post/${post.slug}'`}
+            >
+              <h2 class="font-bold text-lg mb-2">{post.data.title}</h2>
+              <p class="text-sm text-neutral-600 dark:text-neutral-400">{post.data.description}</p>
+              <div class="mt-2.5 text-xs font-medium text-neutral-800 dark:text-neutral-300">
+                Posted on {post.data.dateFormatted}
+              </div>
+            </div>
+          ))
+        ) : (
+          <p>No posts found.</p>
+        )}
+      </div>
+    </section>
+  </main>
 </Layout>
