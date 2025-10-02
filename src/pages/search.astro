@@ -1,7 +1,11 @@
 ---
 import Layout from "../layouts/main.astro";
 import PageHeading from "../components/page-heading.astro";
-import PostsSearch from "../components/PostsSearch.astro";
+import PostsSearch from "../components/PostsSearch.jsx";
+import { getCollection } from 'astro:content';
+
+// 获取所有文章
+const allPosts = await getCollection('post');
 ---
 
 <Layout title="Search Posts">
@@ -12,7 +16,8 @@ import PostsSearch from "../components/PostsSearch.astro";
         description="Search through my posts in real time."
       />
 
-      <PostsSearch client:load />
+      <!-- 客户端渲染 -->
+      <PostsSearch client:load posts={allPosts} />
     </section>
   </main>
 </Layout>
