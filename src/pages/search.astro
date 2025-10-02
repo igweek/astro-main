@@ -1,17 +1,30 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import Layout from "../layouts/main.astro";
 ---
 
 <Layout title="Search">
-  <h1 class="text-2xl font-bold mb-4">Search</h1>
-  <div id="search"></div>
+  <section class="max-w-2xl mx-auto my-12 px-7 lg:px-0">
+    <h1 class="text-3xl font-bold mb-6">Search Posts</h1>
+    <div id="search"></div>
+  </section>
 
-  <!-- Pagefind UI -->
-  <link href="/pagefind/pagefind-ui.css" rel="stylesheet">
-  <script src="/pagefind/pagefind-ui.js"></script>
-  <script>
+  <!-- Pagefind CSS -->
+  <link rel="stylesheet" href="/pagefind/pagefind-ui.css" />
+
+  <!-- Pagefind JS -->
+  <script type="module">
+    import { PagefindUI } from '/pagefind/pagefind-ui.js';
     window.addEventListener("DOMContentLoaded", () => {
-      new PagefindUI({ element: "#search" });
+      new PagefindUI({
+        element: '#search',
+        results: {
+          highlight: true, // 搜索高亮
+          max: 20,         // 最多显示20条结果
+        },
+        search: {
+          placeholder: 'Search articles...'
+        }
+      });
     });
   </script>
 </Layout>
