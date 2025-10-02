@@ -5,7 +5,7 @@ import { getCollection } from "astro:content";
 
 const allPosts = await getCollection("post");
 
-// 获取查询参数
+// 获取 URL 查询参数 ?q=keyword
 const url = new URL(Astro.request.url);
 const query = url.searchParams.get('q')?.toLowerCase() ?? '';
 
@@ -24,16 +24,18 @@ const filteredPosts = allPosts.filter(post =>
         description="Search through my posts by keyword."
       />
 
+      <!-- 搜索表单 -->
       <form method="get" class="my-6">
         <input
           type="text"
           name="q"
           value={query}
-          placeholder="Type a keyword..."
+          placeholder="Type a keyword and press Enter..."
           class="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
         />
       </form>
 
+      <!-- 搜索结果 -->
       <div class="flex flex-col gap-5 my-8">
         {filteredPosts.length > 0 ? (
           filteredPosts.map(post => (
