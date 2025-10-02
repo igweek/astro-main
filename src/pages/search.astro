@@ -2,10 +2,6 @@
 import Layout from "../layouts/main.astro";
 import PageHeading from "../components/page-heading.astro";
 import PostsSearch from "../components/PostsSearch.jsx";
-import { getCollection } from 'astro:content';
-
-// 获取所有文章
-const allPosts = await getCollection('post');
 ---
 
 <Layout title="Search Posts">
@@ -13,11 +9,10 @@ const allPosts = await getCollection('post');
     <section class="relative z-20 max-w-2xl mx-auto my-12 px-7 lg:px-0 flex-grow">
       <PageHeading
         title="Search Posts"
-        description="Search through my posts in real time."
+        description="Search through my posts"
       />
 
-      <!-- 客户端渲染 -->
-      <PostsSearch client:load posts={allPosts} />
+      <PostsSearch client:load />
     </section>
   </main>
 </Layout>
